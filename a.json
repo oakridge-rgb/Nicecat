@@ -1,0 +1,22 @@
+{
+  "changelog": [
+    {
+      "version": "v5.3.0",
+      "date": "2030-08-25",
+      "changes": [
+        " added local games that is up to 2k games (no more fetching games via cdn) 
+        "improved ui",
+        "added music", 
+        "added emulator", 
+        "added settings and custom backgrounds", 
+        "added games.html",
+        "Added changelog",
+        "Mouse-following glow effect",
+        "added daily messages or whateva",
+        "Background image support via /img/background.png",
+        "Bottom-left FAB navigation menu",
+        "Added changelog system"
+      ]
+    }
+  ]
+}

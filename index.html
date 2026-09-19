@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FATE V5</title>
+    <link rel="shortcut icon" href="media/logo.svg" type="image/x-icon" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap");
+
+      :root {
+        --primary: #ff7a00;
+        --primary-soft: #ff9d3d;
+        --primary-hot: #ff3d00;
+        --primary-glow: rgba(255, 122, 0, 0.45);
+        --bg-deep: #060302;
+        --glass: rgba(0, 0, 0, 0.55);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text: #f8fafc;
+        --text-muted: #b8b0a8;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        background: var(--bg-deep);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Background (controlled by settings) */
+      .bg-image {
+        position: fixed; inset: 0; z-index: 0;
+        background: url("/img/background.png") center center / cover no-repeat;
+      }
+      .bg-overlay {
+        position: fixed; inset: 0; z-index: 1;
+        background: rgba(5, 5, 5, 0.55);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      /* ===== FLOATING AURORA ORBS ===== */
+      .glow-orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(100px);
+        pointer-events: none;
+        z-index: 1;
+      }
+      .orb-1 {
+        width: 480px; height: 480px;
+        background: rgba(255, 122, 0, 0.20);
+        top: -12%; left: 18%;
+        animation: orbFloat1 16s ease-in-out infinite;
+      }
+      .orb-2 {
+        width: 380px; height: 380px;
+        background: rgba(255, 61, 0, 0.16);
+        bottom: -10%; right: 8%;
+        animation: orbFloat2 20s ease-in-out infinite;
+      }
+      .orb-3 {
+        width: 300px; height: 300px;
+        background: rgba(255, 157, 61, 0.14);
+        top: 40%; left: -8%;
+        animation: orbFloat3 18s ease-in-out infinite;
+      }
+      @keyframes orbFloat1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(60px, 40px) scale(1.15); }
+      }
+      @keyframes orbFloat2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-50px, -60px) scale(1.1); }
+      }
+      @keyframes orbFloat3 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(40px, -40px) scale(1.2); }
+      }
+
+      /* ===== PAGE EDGE GLOW (vignette that breathes) ===== */
+      .page-glow {
+        position: fixed;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        box-shadow:
+          inset 0 0 120px rgba(255, 122, 0, 0.16),
+          inset 0 0 300px rgba(255, 61, 0, 0.08);
+        animation: pageBreathe 6s ease-in-out infinite;
+      }
+      @keyframes pageBreathe {
+        0%, 100% {
+          box-shadow:
+            inset 0 0 120px rgba(255, 122, 0, 0.16),
+            inset 0 0 300px rgba(255, 61, 0, 0.08);
+        }
+        50% {
+          box-shadow:
+            inset 0 0 170px rgba(255, 122, 0, 0.24),
+            inset 0 0 380px rgba(255, 61, 0, 0.13);
+        }
+      }
+
+      /* Particles */
+      #particleCanvas {
+        position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      }
+
+      /* Mouse Glow (controlled by settings) */
+      #mouseGlow {
+        position: fixed;
+        width: 500px; height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 122, 0, 0.14) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 3;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.3s;
+        opacity: 0;
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        position: fixed;
+        top: 16px; left: 16px; bottom: 16px;
+        width: 84px;
+        z-index: 100;
+        background: linear-gradient(180deg, rgba(28,13,4,0.92), rgba(12,6,2,0.96));
+        border: 1px solid rgba(255,122,0,0.22);
+        border-radius: 24px;
+        box-shadow:
+          0 0 50px rgba(255,122,0,0.14),
+          inset 0 0 24px rgba(255,122,0,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 18px 0;
+        gap: 8px;
+      }
+
+      .side-logo {
+        width: 52px; height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #ff9d1c, #ff3d00);
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 800; font-size: 22px; color: #fff;
+        text-decoration: none;
+        box-shadow: 0 0 30px rgba(255,122,0,0.6);
+        margin-bottom: 12px;
+        flex-shrink: 0;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        animation: logoPulse 4s ease-in-out infinite;
+      }
+      @keyframes logoPulse {
+        0%, 100% { box-shadow: 0 0 30px rgba(255,122,0,0.55); }
+        50% { box-shadow: 0 0 46px rgba(255,122,0,0.85); }
+      }
+      .side-logo:hover { transform: scale(1.08); }
+
+      .side-link {
+        position: relative;
+        width: 52px; height: 52px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        color: #d6d3d1;
+        text-decoration: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+      }
+      .side-link svg { width: 24px; height: 24px; fill: currentColor; }
+      .side-link:hover {
+        background: rgba(255,122,0,0.15);
+        color: var(--primary-soft);
+        transform: translateY(-2px);
+        box-shadow: 0 0 22px rgba(255,122,0,0.3);
+      }
+
+      .side-link::after {
+        content: attr(data-label);
+        position: absolute;
+        left: calc(100% + 14px);
+        top: 50%;
+        transform: translateY(-50%) translateX(-6px);
+        background: rgba(10,5,2,0.95);
+        border: 1px solid rgba(255,122,0,0.25);
+        color: var(--text);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 10px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.25s ease;
+        z-index: 101;
+      }
+      .side-link:hover::after {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+      }
+
+      .side-spacer { flex: 1; }
+
+      /* ===== MAIN FRAME (breathing glow border) ===== */
+      .main-frame {
+        position: relative;
+        z-index: 4;
+        margin: 16px 16px 16px calc(84px + 32px);
+        min-height: calc(100vh - 32px);
+        border-radius: 28px;
+        border: 1px solid rgba(255,122,0,0.28);
+        background: rgba(12,6,3,0.55);
+        animation: frameGlow 5s ease-in-out infinite;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        overflow: hidden;
+      }
+      @keyframes frameGlow {
+        0%, 100% {
+          box-shadow:
+            0 0 60px rgba(255,122,0,0.14),
+            inset 0 0 90px rgba(255,122,0,0.05),
+            inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+        50% {
+          box-shadow:
+            0 0 110px rgba(255,122,0,0.28),
+            inset 0 0 130px rgba(255,122,0,0.09),
+            inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+      }
+
+      /* ===== HERO ===== */
+      .hero {
+        min-height: calc(100vh - 32px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 80px 24px 60px;
+        position: relative;
+      }
+
+      /* Radial glow behind hero content */
+      .hero::before {
+        content: "";
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 700px; height: 500px;
+        background: radial-gradient(ellipse, rgba(255,122,0,0.14) 0%, transparent 65%);
+        pointer-events: none;
+        animation: heroGlowPulse 5s ease-in-out infinite;
+      }
+      @keyframes heroGlowPulse {
+        0%, 100% { opacity: 0.7; }
+        50% { opacity: 1; }
+      }
+
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 9999px;
+        background: rgba(255, 122, 0, 0.1);
+        border: 1px solid rgba(255, 122, 0, 0.3);
+        color: var(--primary-soft);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        animation: fadeUp 0.9s ease 0.1s forwards;
+      }
+      .hero-badge .dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 12px var(--primary);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+      .hero-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2.5rem, 8vw, 4.5rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        min-height: 1.2em;
+        position: relative;
+        z-index: 1;
+        background: linear-gradient(90deg, #ffc46b, #ff9d1c, #ff7a00, #ff3d00, #ff7a00, #ff9d1c, #ffc46b);
+        background-size: 300% 100%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradientFlow 7s linear infinite;
+        filter: drop-shadow(0 0 32px rgba(255, 122, 0, 0.55));
+      }
+      @keyframes gradientFlow {
+        to { background-position: 300% 0; }
+      }
+
+      .type-cursor {
+        display: inline-block;
+        color: #fff;
+        font-weight: 400;
+        -webkit-text-fill-color: #fff;
+        animation: blink 1s step-end infinite;
+        margin-left: 2px;
+        filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+
+      .hero-subtitle {
+        color: var(--text-muted);
+        max-width: 580px;
+        margin: 1.25rem auto 2.5rem;
+        line-height: 1.7;
+        font-size: clamp(1rem, 2.2vw, 1.25rem);
+        opacity: 0;
+        animation: fadeUp 0.9s ease 0.4s forwards;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 0 20px rgba(0,0,0,0.8);
+      }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .btn-start {
+        opacity: 0;
+        animation:
+          fadeUp 0.9s ease 0.7s forwards,
+          btnPulse 3s ease-in-out 1.8s infinite;
+        padding: 18px 56px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #ffa41c, #ff6200);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.15rem;
+        text-decoration: none;
+        box-shadow: 0 10px 44px rgba(255,122,0,0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.25);
+      }
+      @keyframes btnPulse {
+        0%, 100% { box-shadow: 0 10px 44px rgba(255,122,0,0.45); }
+        50% { box-shadow: 0 10px 70px rgba(255,122,0,0.8); }
+      }
+      .btn-start::before {
+        content: "";
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.6s ease;
+      }
+      .btn-start:hover::before { left: 100%; }
+      .btn-start:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 18px 70px rgba(255,122,0,0.85);
+      }
+
+      .pill-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 1.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        opacity: 0;
+        animation: fadeUp 0.9s ease 1s forwards;
+        position: relative;
+        z-index: 1;
+      }
+      .pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 22px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+      .pill svg { width: 18px; height: 18px; fill: currentColor; }
+      .pill:hover {
+        background: rgba(255,122,0,0.12);
+        border-color: rgba(255,122,0,0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(255,122,0,0.25);
+      }
+
+      /* ===== CHANGELOG ===== */
+      .changelog-section {
+        position: relative;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 20px 24px 100px;
+      }
+      .changelog-header { text-align: center; margin-bottom: 3rem; }
+      .changelog-header h2 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+      .changelog-header h2 span {
+        background: linear-gradient(135deg, #fff, var(--primary-soft));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 18px rgba(255,122,0,0.35));
+      }
+      .changelog-header p { color: var(--text-muted); font-size: 0.95rem; }
+
+      .changelog-timeline { position: relative; display: flex; flex-direction: column; }
+      .changelog-timeline::before {
+        content: "";
+        position: absolute;
+        left: 24px; top: 12px; bottom: 12px;
+        width: 2px;
+        background: linear-gradient(180deg, rgba(255,122,0,0.7) 0%, rgba(255,61,0,0.35) 50%, rgba(255,122,0,0.1) 100%);
+        border-radius: 1px;
+        box-shadow: 0 0 12px rgba(255,122,0,0.3);
+      }
+
+      .changelog-entry {
+        position: relative;
+        padding-left: 64px;
+        padding-bottom: 40px;
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .changelog-entry.visible { opacity: 1; transform: translateY(0); }
+      .changelog-entry:last-child { padding-bottom: 0; }
+
+      .entry-dot {
+        position: absolute;
+        left: 15px; top: 8px;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-hot));
+        border: 3px solid rgba(5,3,2,0.9);
+        box-shadow: 0 0 18px rgba(255,122,0,0.5);
+        z-index: 2;
+      }
+      .entry-dot.latest { animation: dotPulse 2s infinite; }
+      @keyframes dotPulse {
+        0%, 100% { box-shadow: 0 0 15px rgba(255,122,0,0.5); }
+        50% { box-shadow: 0 0 30px rgba(255,122,0,0.9); }
+      }
+
+      .entry-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 24px;
+        transition: all 0.3s ease;
+      }
+      .entry-card:hover {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,122,0,0.25);
+        transform: translateX(4px);
+        box-shadow: 0 0 30px rgba(255,122,0,0.08);
+      }
+      .entry-header {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 12px; flex-wrap: wrap;
+      }
+      .entry-version {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.1rem; font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-soft), var(--primary-hot));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .entry-date {
+        font-size: 0.8rem; color: #78716c;
+        background: rgba(255,255,255,0.05);
+        padding: 4px 10px; border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+      .entry-badge {
+        font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        padding: 3px 8px; border-radius: 6px;
+        background: rgba(255,122,0,0.15);
+        color: var(--primary-soft);
+        border: 1px solid rgba(255,122,0,0.2);
+      }
+      .entry-changes { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+      .entry-changes li {
+        display: flex; align-items: flex-start; gap: 10px;
+        color: var(--text-muted);
+        font-size: 0.92rem; line-height: 1.5;
+      }
+      .entry-changes li::before {
+        content: "";
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--primary);
+        margin-top: 7px; flex-shrink: 0;
+        box-shadow: 0 0 10px rgba(255,122,0,0.5);
+      }
+      .changelog-error, .changelog-loading {
+        text-align: center; padding: 40px; color: #78716c;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+      }
+      .changelog-loading .spinner {
+        width: 32px; height: 32px;
+        border: 2px solid rgba(255,122,0,0.2);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 0 auto 16px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ===== CHANGELOG MODAL ===== */
+      .changelog-modal-overlay {
+        position: fixed; inset: 0; z-index: 200;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.4s ease;
+      }
+      .changelog-modal-overlay.open { opacity: 1; pointer-events: all; }
+      .changelog-modal {
+        background: rgba(12,7,3,0.97);
+        border: 1px solid rgba(255,122,0,0.2);
+        border-radius: 24px;
+        width: 100%; max-width: 600px; max-height: 80vh;
+        display: flex; flex-direction: column; overflow: hidden;
+        transform: scale(0.9) translateY(20px);
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 60px rgba(255,122,0,0.15);
+      }
+      .changelog-modal-overlay.open .changelog-modal { transform: scale(1) translateY(0); }
+      .changelog-modal-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 24px 28px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+      }
+      .changelog-modal-header h3 {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 1.3rem; font-weight: 700;
+        background: linear-gradient(135deg, #fff, var(--primary-soft));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .changelog-modal-close {
+        width: 36px; height: 36px; border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s ease;
+        font-size: 1.2rem; line-height: 1;
+      }
+      .changelog-modal-close:hover {
+        background: rgba(255,122,0,0.15);
+        color: #fff;
+        border-color: rgba(255,122,0,0.3);
+      }
+      .changelog-modal-body { padding: 20px 28px 28px; overflow-y: auto; }
+      .changelog-modal-body .changelog-timeline::before { left: 18px; }
+      .changelog-modal-body .changelog-entry {
+        padding-left: 48px; padding-bottom: 28px;
+        opacity: 1; transform: none;
+      }
+      .changelog-modal-body .changelog-entry:last-child { padding-bottom: 0; }
+      .changelog-modal-body .entry-dot { left: 9px; width: 18px; height: 18px; }
+      .changelog-modal-body .entry-card { padding: 18px; }
+      .changelog-modal-body .entry-version { font-size: 1rem; }
+      .changelog-modal-body .entry-changes li { font-size: 0.88rem; }
+      .changelog-new-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; border-radius: 8px;
+        background: rgba(16,185,129,0.15);
+        border: 1px solid rgba(16,185,129,0.25);
+        color: #34d399;
+        font-size: 0.7rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        margin-left: 8px;
+        animation: pulse 2s infinite;
+      }
+      .changelog-new-badge .dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #34d399; box-shadow: 0 0 8px #34d399;
+      }
+
+      /* ===== ANNOUNCEMENT POPUP ===== */
+      .announcement-overlay {
+        position: fixed; inset: 0; z-index: 300;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .announcement-overlay.open { opacity: 1; pointer-events: all; }
+      .announcement-modal {
+        background: linear-gradient(145deg, rgba(14,8,3,0.98), rgba(8,5,3,0.98));
+        border: 1px solid rgba(255,122,0,0.2);
+        border-radius: 28px;
+        width: 100%; max-width: 720px; max-height: 90vh;
+        display: flex; flex-direction: column; overflow: hidden;
+        transform: scale(0.85) translateY(40px);
+        transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 0 0 1px rgba(255,122,0,0.1), 0 25px 100px rgba(0,0,0,0.8), 0 0 80px rgba(255,122,0,0.2);
+        position: relative;
+      }
+      .announcement-overlay.open .announcement-modal { transform: scale(1) translateY(0); }
+      .announcement-glow {
+        position: absolute; top: -60px; left: 50%;
+        transform: translateX(-50%);
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(255,122,0,0.25) 0%, transparent 70%);
+        pointer-events: none; z-index: 0;
+      }
+      .announcement-close {
+        position: absolute; top: 20px; right: 20px;
+        width: 40px; height: 40px; border-radius: 14px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-muted);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 1.4rem; line-height: 1; z-index: 10;
+      }
+      .announcement-close:hover {
+        background: rgba(255,122,0,0.15);
+        color: #fff;
+        border-color: rgba(255,122,0,0.3);
+        transform: rotate(90deg);
+      }
+      .announcement-image-wrap {
+        position: relative; width: 100%;
+        aspect-ratio: 16 / 9; overflow: hidden; flex-shrink: 0;
+      }
+      .announcement-image-wrap img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .announcement-modal:hover .announcement-image-wrap img { transform: scale(1.05); }
+      .announcement-image-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, transparent 40%, rgba(6,3,2,0.9) 100%);
+        pointer-events: none;
+      }
+      .announcement-badge {
+        position: absolute; top: 20px; left: 20px;
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 16px; border-radius: 9999px;
+        background: rgba(255,122,0,0.15);
+        border: 1px solid rgba(255,122,0,0.3);
+        color: var(--primary-soft);
+        font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.08em;
+        z-index: 5; animation: pulse 2.5s infinite;
+        backdrop-filter: blur(10px);
+      }
+      .announcement-badge .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--primary); box-shadow: 0 0 12px var(--primary);
+      }
+      .announcement-body {
+        padding: 28px 36px 32px;
+        position: relative; z-index: 1; overflow-y: auto;
+      }
+      .announcement-subtitle {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 0.85rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        color: var(--primary);
+        margin-bottom: 8px;
+        opacity: 0; transform: translateY(10px);
+        transition: all 0.5s ease 0.2s;
+      }
+      .announcement-overlay.open .announcement-subtitle { opacity: 1; transform: translateY(0); }
+      .announcement-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2rem, 5vw, 3rem);
+        font-weight: 800; line-height: 1.1; margin-bottom: 16px;
+        background: linear-gradient(135deg, #fff 0%, #ff9d3d 40%, #ff7a00 80%, #ff3d00 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0; transform: translateY(15px);
+        transition: all 0.5s ease 0.3s;
+      }
+      .announcement-overlay.open .announcement-title { opacity: 1; transform: translateY(0); }
+      .announcement-message {
+        font-size: 1.05rem; color: var(--text-muted);
+        line-height: 1.7; margin-bottom: 28px;
+        opacity: 0; transform: translateY(15px);
+        transition: all 0.5s ease 0.4s;
+      }
+      .announcement-overlay.open .announcement-message { opacity: 1; transform: translateY(0); }
+      .announcement-actions {
+        display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        opacity: 0; transform: translateY(15px);
+        transition: all 0.5s ease 0.5s;
+      }
+      .announcement-overlay.open .announcement-actions { opacity: 1; transform: translateY(0); }
+      .announcement-link {
+        padding: 14px 32px; border-radius: 16px;
+        background: linear-gradient(135deg, #ffa41c, #ff6200);
+        color: white; font-weight: 600; font-size: 0.95rem;
+        border: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 10px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 32px rgba(255,122,0,0.35);
+        text-decoration: none; position: relative; overflow: hidden;
+      }
+      .announcement-link::before {
+        content: "";
+        position: absolute; top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+        transition: left 0.6s ease;
+      }
+      .announcement-link:hover::before { left: 100%; }
+      .announcement-link:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 12px 40px rgba(255,122,0,0.5);
+      }
+      .announcement-dismiss {
+        padding: 14px 24px; border-radius: 16px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: var(--text-muted);
+        font-weight: 500; font-size: 0.9rem;
+        cursor: pointer; transition: all 0.3s ease;
+      }
+      .announcement-dismiss:hover {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border-color: rgba(255,255,255,0.2);
+      }
+      .announcement-checkbox {
+        display: flex; align-items: center; gap: 10px;
+        margin-top: 20px; padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        opacity: 0; transform: translateY(10px);
+        transition: all 0.5s ease 0.6s;
+      }
+      .announcement-overlay.open .announcement-checkbox { opacity: 1; transform: translateY(0); }
+      .announcement-checkbox input[type="checkbox"] {
+        appearance: none;
+        width: 18px; height: 18px; border-radius: 6px;
+        border: 2px solid rgba(255,122,0,0.4);
+        background: rgba(255,122,0,0.05);
+        cursor: pointer; position: relative;
+        transition: all 0.2s ease; flex-shrink: 0;
+      }
+      .announcement-checkbox input[type="checkbox"]:checked {
+        background: linear-gradient(135deg, #ffa41c, #ff6200);
+        border-color: transparent;
+      }
+      .announcement-checkbox input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute; left: 5px; top: 2px;
+        width: 4px; height: 8px;
+        border: solid white; border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      .announcement-checkbox label {
+        font-size: 0.85rem; color: #78716c;
+        cursor: pointer; user-select: none;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: var(--bg-deep); }
+      ::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, var(--primary), var(--primary-hot));
+        border-radius: 4px;
+      }
+
+      /* Mobile */
+      @media (max-width: 640px) {
+        .sidebar {
+          width: 64px;
+          top: 10px; left: 10px; bottom: 10px;
+          border-radius: 20px;
+          padding: 12px 0;
+        }
+        .side-logo { width: 44px; height: 44px; font-size: 18px; border-radius: 13px; }
+        .side-link { width: 44px; height: 44px; }
+        .side-link svg { width: 21px; height: 21px; }
+        .side-link::after { display: none; }
+        .main-frame {
+          margin: 10px 10px 10px calc(64px + 20px);
+          min-height: calc(100vh - 20px);
+          border-radius: 22px;
+        }
+        .hero { min-height: calc(100vh - 20px); padding: 60px 16px 40px; }
+        .hero::before { width: 90vw; height: 400px; }
+        .btn-start { padding: 16px 42px; font-size: 1.05rem; }
+        .changelog-timeline::before { left: 18px; }
+        .changelog-entry { padding-left: 52px; }
+        .entry-dot { left: 9px; width: 18px; height: 18px; }
+        .announcement-body { padding: 22px 24px 24px; }
+        .announcement-image-wrap { aspect-ratio: 16 / 10; }
+        .announcement-actions { flex-direction: column; width: 100%; }
+        .announcement-link, .announcement-dismiss { width: 100%; justify-content: center; }
+        .orb-1 { width: 300px; height: 300px; }
+        .orb-2 { width: 260px; height: 260px; }
+        .orb-3 { display: none; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Background (controlled by Settings) -->
+    <div class="bg-image" id="bgImage"></div>
+    <div class="bg-overlay" id="bgOverlay"></div>
+
+    <!-- Aurora orbs -->
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
+    <canvas id="particleCanvas"></canvas>
+    <div id="mouseGlow"></div>
+
+    <!-- Breathing page-edge glow -->
+    <div class="page-glow"></div>
+
+    <!-- ===== SIDEBAR (Games + Settings only) ===== -->
+    <aside class="sidebar">
+      <a href="index.html" class="side-logo" title="FATE V5">F</a>
+
+      <a href="games.html" class="side-link" data-label="Games">
+        <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      </a>
+
+      <div class="side-spacer"></div>
+
+      <a href="settings.html" class="side-link" data-label="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      </a>
+    </aside>
+
+    <!-- ===== MAIN FRAME ===== -->
+    <main class="main-frame">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          V5 Now Live
+        </div>
+
+        <h1 class="hero-title"><span id="typedText"></span><span class="type-cursor">|</span></h1>
+
+        <p class="hero-subtitle">
+          The next generation of game sites. FATE 5.0 is built for speed and
+          ease of use, with a sleek design and many features.
+        </p>
+
+        <a href="games.html" class="btn-start" id="startPlayingBtn">Start Playing</a>
+
+        <div class="pill-row">
+          <a href="games.html" class="pill">
+            <svg viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            Games
+          </a>
+          <a href="settings.html" class="pill">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.484.484 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Settings
+          </a>
+        </div>
+      </section>
+
+      <!-- Changelog -->
+      <section class="changelog-section" id="changelogSection">
+        <div class="changelog-header">
+          <h2><span>Changelog</span></h2>
+          <p>What's new and what changed</p>
+        </div>
+        <div class="changelog-timeline" id="changelogTimeline">
+          <div class="changelog-loading">
+            <div class="spinner"></div>
+            Loading changelog...
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Changelog Modal -->
+    <div class="changelog-modal-overlay" id="changelogModal">
+      <div class="changelog-modal">
+        <div class="changelog-modal-header">
+          <h3 id="modalTitle">What's New</h3>
+          <button class="changelog-modal-close" onclick="closeChangelogModal()">✕</button>
+        </div>
+        <div class="changelog-modal-body" id="changelogModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="announcement-overlay" id="announcementOverlay">
+      <div class="announcement-modal">
+        <div class="announcement-glow"></div>
+        <button class="announcement-close" onclick="closeAnnouncementModal()">✕</button>
+        <div id="announcementBody"></div>
+      </div>
+    </div>
+
+    <script>
+      /* ================================================================
+         1) TYPEWRITER — fully standalone, runs first, can't be broken
+            by anything else on the page
+         ================================================================ */
+      (function () {
+        function startTypewriter() {
+          var el = document.getElementById('typedText');
+          if (!el) return; // element missing? just stop quietly
+
+          var phrases = [
+            'FATE V5 is Live',
+            'FATE V5 is Fast',
+            'FATE V5 is Free',
+            'FATE V5 is Unblocked'
+          ];
+
+          var phraseIndex = 0;
+          var charIndex = 0;
+          var deleting = false;
+
+          function tick() {
+            var word = phrases[phraseIndex];
+
+            if (!deleting) {
+              charIndex++;
+              el.textContent = word.slice(0, charIndex);
+
+              if (charIndex >= word.length) {
+                deleting = true;
+                setTimeout(tick, 2000); // hold full word
+                return;
+              }
+              setTimeout(tick, 90);     // typing speed
+            } else {
+              charIndex--;
+              el.textContent = word.slice(0, charIndex);
+
+              if (charIndex <= 0) {
+                deleting = false;
+                phraseIndex = (phraseIndex + 1) % phrases.length;
+                setTimeout(tick, 400);  // pause before next word
+                return;
+              }
+              setTimeout(tick, 45);     // deleting speed
+            }
+          }
+
+          tick();
+        }
+
+        // Start as soon as the DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', startTypewriter);
+        } else {
+          startTypewriter();
+        }
+      })();
+
+      /* ================================================================
+         2) SHARED SETTINGS — same localStorage keys as settings.html
+         ================================================================ */
+      var BG_PRESETS = {
+        default: '/img/background.png',
+        none: '',
+        gif1: 'https://media.giphy.com/media/3o7abAH6Y8g0yZ7dqU/giphy.gif',
+        gif2: 'https://media.giphy.com/media/WoD6FZn9GAO1y/giphy.gif',
+        gif3: 'https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif'
+      };
+
+      var LS = {
+        CLOAK: 'fate_v5_cloak',
+        PANIC: 'fate_v5_panic',
+        PARTICLES: 'fate_v5_particles',
+        GLOW: 'fate_v5_glow',
+        PARTICLE_COUNT: 'fate_v5_particle_count',
+        SMOOTH: 'fate_v5_smooth',
+        NEW_TAB: 'fate_v5_newtab',
+        BG: 'fate_v5_bg',
+        BG_CUSTOM: 'fate_v5_bg_custom',
+        BG_OPACITY: 'fate_v5_bg_opacity',
+        BG_BLUR: 'fate_v5_bg_blur'
+      };
+
+      function applyBackground() {
+        var bgKey = localStorage.getItem(LS.BG) || 'default';
+        var customUrl = localStorage.getItem(LS.BG_CUSTOM) || '';
+        var opacity = localStorage.getItem(LS.BG_OPACITY);
+        if (opacity === null) opacity = 55;
+        var blur = localStorage.getItem(LS.BG_BLUR);
+        if (blur === null) blur = 'true';
+
+        var bgImage = document.getElementById('bgImage');
+        var bgOverlay = document.getElementById('bgOverlay');
+        if (!bgImage || !bgOverlay) return;
+
+        var url = '';
+        if (bgKey === 'custom' && customUrl) {
+          url = customUrl;
+        } else if (bgKey === 'none') {
+          url = '';
+        } else if (BG_PRESETS[bgKey]) {
+          url = BG_PRESETS[bgKey];
+        } else {
+          url = BG_PRESETS.default;
+        }
+
+        if (url) {
+          bgImage.style.backgroundImage = 'url(' + url + ')';
+          bgImage.style.display = 'block';
+        } else {
+          bgImage.style.backgroundImage = 'none';
+          bgImage.style.display = 'none';
+        }
+
+        bgOverlay.style.background = 'rgba(5,5,5,' + (opacity / 100) + ')';
+        if (blur === 'true') {
+          bgOverlay.style.backdropFilter = 'blur(4px)';
+          bgOverlay.style.webkitBackdropFilter = 'blur(4px)';
+        } else {
+          bgOverlay.style.backdropFilter = 'none';
+          bgOverlay.style.webkitBackdropFilter = 'none';
+        }
+      }
+
+      function applyCloak() {
+        document.title = 'Google Classroom';
+        var link = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'shortcut icon';
+          document.head.appendChild(link);
+        }
+        link.href = 'https://www.gstatic.com/classroom/favicon.png';
+      }
+      function removeCloak() {
+        document.title = 'FATE V5';
+        var link = document.querySelector("link[rel*='icon']");
+        if (link) link.href = 'media/logo.svg';
+      }
+
+      /* ---------- Particles (now with orange glow) ---------- */
+      var canvas, ctx, particles = [], particlesEnabled = true, particleCount = 50;
+
+      function resizeCanvas() {
+        if (!canvas) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      function Particle(initial) { this.reset(!!initial); }
+      Particle.prototype.reset = function (initial) {
+        this.x = Math.random() * canvas.width;
+        this.y = initial ? Math.random() * canvas.height : canvas.height + 12;
+        this.r = Math.random() * 6 + 2;
+        this.speed = Math.random() * 0.45 + 0.12;
+        this.drift = (Math.random() - 0.5) * 0.3;
+        this.opacity = Math.random() * 0.45 + 0.12;
+        // Mix of warm-orange and cool-gray particles
+        this.warm = Math.random() < 0.45;
+      };
+      Particle.prototype.update = function () {
+        this.y -= this.speed;
+        this.x += this.drift;
+        if (this.y < -20 || this.x < -20 || this.x > canvas.width + 20) this.reset(false);
+      };
+      Particle.prototype.draw = function () {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        if (this.warm) {
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = 'rgba(255, 140, 40, 0.9)';
+          ctx.fillStyle = 'rgba(255, 150, 50,' + (this.opacity + 0.15) + ')';
+        } else {
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = 'rgba(220, 220, 220, 0.6)';
+          ctx.fillStyle = 'rgba(215, 215, 215,' + this.opacity + ')';
+        }
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      };
+
+      function rebuildParticles() {
+        if (!ctx) return;
+        particles = [];
+        for (var i = 0; i < particleCount; i++) particles.push(new Particle(true));
+      }
+
+      function animateParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (particlesEnabled) {
+          for (var i = 0; i < particles.length; i++) {
+            particles[i].update();
+            particles[i].draw();
+          }
+        }
+        requestAnimationFrame(animateParticles);
+      }
+
+      /* ---------- Mouse Glow ---------- */
+      function initMouseGlow() {
+        var glow = document.getElementById('mouseGlow');
+        if (!glow) return;
+        document.addEventListener('mousemove', function (e) {
+          glow.style.left = e.clientX + 'px';
+          glow.style.top = e.clientY + 'px';
+          glow.style.opacity = '1';
+        });
+        document.addEventListener('mouseleave', function () {
+          glow.style.opacity = '0';
+        });
+      }
+
+      /* ---------- Master settings loader ---------- */
+      function loadSharedSettings() {
+        applyBackground();
+
+        if (localStorage.getItem(LS.CLOAK) === 'true') {
+          applyCloak();
+        } else {
+          removeCloak();
+        }
+
+        particlesEnabled = localStorage.getItem(LS.PARTICLES) !== 'false';
+
+        var count = parseInt(localStorage.getItem(LS.PARTICLE_COUNT));
+        if (isNaN(count) || count < 0) count = 50;
+        particleCount = count;
+        rebuildParticles();
+
+        var glow = document.getElementById('mouseGlow');
+        if (glow) {
+          glow.style.display = localStorage.getItem(LS.GLOW) === 'false' ? 'none' : 'block';
+        }
+
+        document.documentElement.style.scrollBehavior =
+          localStorage.getItem(LS.SMOOTH) === 'false' ? 'auto' : 'smooth';
+
+        var newTab = localStorage.getItem(LS.NEW_TAB) === 'true';
+        var startBtn = document.getElementById('startPlayingBtn');
+        if (startBtn) {
+          if (newTab) {
+            startBtn.target = '_blank';
+            startBtn.rel = 'noopener';
+          } else {
+            startBtn.removeAttribute('target');
+            startBtn.removeAttribute('rel');
+          }
+        }
+      }
+
+      /* ---------- Live sync when settings change in another tab ---------- */
+      window.addEventListener('storage', function (e) {
+        try {
+          if (!e.key || Object.values(LS).indexOf(e.key) === -1) return;
+          loadSharedSettings();
+        } catch (err) {}
+      });
+
+      /* ---------- Panic key ---------- */
+      document.addEventListener('keydown', function (e) {
+        try {
+          var panic = localStorage.getItem(LS.PANIC);
+          if (panic && e.key && e.key.toLowerCase() === panic.toLowerCase()) {
+            window.location.href = 'https://clever.com';
+          }
+        } catch (err) {}
+      });
+
+      /* ================================================================
+         3) CHANGELOG
+         ================================================================ */
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      var CHANGELOG_KEY = 'fate_v5_last_changelog';
+
+      function renderChangelogHTML(data) {
+        if (!data.changelog || !Array.isArray(data.changelog)) {
+          return '<div class="changelog-error"><p>Couldn\'t load changelog.</p><p style="font-size:0.8rem;margin-top:4px;">Make sure a.json exists.</p></div>';
+        }
+        var html = '<div class="changelog-timeline">';
+        data.changelog.forEach(function (entry, index) {
+          var isLatest = index === 0;
+          html += '<div class="changelog-entry">' +
+            '<div class="entry-dot ' + (isLatest ? 'latest' : '') + '"></div>' +
+            '<div class="entry-card">' +
+              '<div class="entry-header">' +
+                '<span class="entry-version">' + escapeHtml(entry.version) + '</span>' +
+                '<span class="entry-date">' + escapeHtml(entry.date) + '</span>' +
+                (isLatest ? '<span class="entry-badge">Latest</span>' : '') +
+              '</div>' +
+              '<ul class="entry-changes">' +
+                (entry.changes || []).map(function (c) { return '<li>' + escapeHtml(c) + '</li>'; }).join('') +
+              '</ul>' +
+            '</div></div>';
+        });
+        html += '</div>';
+        return html;
+      }
+
+      async function loadChangelog() {
+        var container = document.getElementById('changelogTimeline');
+        try {
+          var res = await fetch('a.json');
+          if (!res.ok) throw new Error('Failed to load');
+          var data = await res.json();
+
+          container.innerHTML = renderChangelogHTML(data);
+
+          var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+          }, { threshold: 0.15 });
+          document.querySelectorAll('.changelog-entry').forEach(function (el) { observer.observe(el); });
+
+          checkChangelogModal(data);
+        } catch (err) {
+          container.innerHTML =
+            '<div class="changelog-error"><p>Couldn\'t load changelog.</p><p style="font-size:0.8rem;margin-top:4px;">Make sure a.json exists.</p></div>';
+        }
+      }
+
+      function checkChangelogModal(data) {
+        if (!data.changelog || !data.changelog.length) return;
+        var latest = data.changelog[0];
+        var stored = localStorage.getItem(CHANGELOG_KEY);
+        var currentKey = latest.version + '|' + latest.date;
+        if (stored !== currentKey) {
+          showChangelogModal(data, !stored);
+          localStorage.setItem(CHANGELOG_KEY, currentKey);
+        }
+      }
+
+      function showChangelogModal(data, isFirstVisit) {
+        var modal = document.getElementById('changelogModal');
+        var body = document.getElementById('changelogModalBody');
+        var title = document.getElementById('modalTitle');
+
+        title.innerHTML = isFirstVisit
+          ? 'Welcome to <span style="background:linear-gradient(135deg,#fff,#ff9d3d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">FATE V5</span>'
+          : 'What\'s New <span class="changelog-new-badge"><span class="dot"></span>New Update</span>';
+
+        body.innerHTML = renderChangelogHTML(data);
+        requestAnimationFrame(function () { modal.classList.add('open'); });
+      }
+
+      function closeChangelogModal() {
+        document.getElementById('changelogModal').classList.remove('open');
+      }
+
+      /* ================================================================
+         4) ANNOUNCEMENT
+         ================================================================ */
+      var ANNOUNCEMENT_KEY = 'fate_v5_dismissed_announcements';
+
+      function getDismissedAnnouncements() {
+        try {
+          return JSON.parse(localStorage.getItem(ANNOUNCEMENT_KEY)) || {};
+        } catch (e) {
+          return {};
+        }
+      }
+      function dismissAnnouncement(id) {
+        var dismissed = getDismissedAnnouncements();
+        dismissed[id] = true;
+        localStorage.setItem(ANNOUNCEMENT_KEY, JSON.stringify(dismissed));
+      }
+      function isAnnouncementDismissed(id) {
+        return !!getDismissedAnnouncements()[id];
+      }
+
+      function renderAnnouncementHTML(a) {
+        var hasImage = a.image && a.image.trim() !== '';
+        var hasLink = a.link && a.link.trim() !== '';
+        var badgeText = a.badge || 'Announcement';
+        var html = '';
+
+        if (hasImage) {
+          html += '<div class="announcement-image-wrap">' +
+            '<img src="' + escapeHtml(a.image) + '" alt="' + escapeHtml(a.title || '') + '" onerror="this.style.display=\'none\';this.parentElement.style.display=\'none\';">' +
+            '<div class="announcement-image-overlay"></div>' +
+            '<div class="announcement-badge"><span class="dot"></span>' + escapeHtml(badgeText) + '</div>' +
+            '</div>';
+        }
+
+        html += '<div class="announcement-body">';
+
+        if (!hasImage && badgeText) {
+          html += '<div class="announcement-badge" style="position:static;display:inline-flex;margin-bottom:16px;"><span class="dot"></span>' + escapeHtml(badgeText) + '</div>';
+        }
+        if (a.subtitle) {
+          html += '<div class="announcement-subtitle">' + escapeHtml(a.subtitle) + '</div>';
+        }
+
+        html += '<h2 class="announcement-title">' + escapeHtml(a.title || 'Announcement') + '</h2>';
+
+        if (a.message) {
+          html += '<p class="announcement-message">' + escapeHtml(a.message) + '</p>';
+        }
+
+        html += '<div class="announcement-actions">';
+        if (hasLink) {
+          html += '<a href="' + escapeHtml(a.link) + '" target="_blank" class="announcement-link" onclick="dismissAnnouncement(\'' + escapeHtml(a.id) + '\');closeAnnouncementModal();">' +
+            '<svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>' +
+            escapeHtml(a.linkText || 'Learn More') +
+            '</a>';
+        }
+        html += '<button class="announcement-dismiss" onclick="closeAnnouncementModal()">Close</button>';
+        html += '</div>';
+
+        html += '<div class="announcement-checkbox">' +
+          '<input type="checkbox" id="announcementDontShow" onchange="if(this.checked)dismissAnnouncement(\'' + escapeHtml(a.id) + '\')">' +
+          '<label for="announcementDontShow">Don\'t show this again</label>' +
+          '</div>';
+
+        html += '</div>';
+        return html;
+      }
+
+      async function loadAnnouncement() {
+        var overlay = document.getElementById('announcementOverlay');
+        var body = document.getElementById('announcementBody');
+        try {
+          var res = await fetch('a.json');
+          if (!res.ok) return;
+          var data = await res.json();
+          var a = data.announcement;
+          if (!a || !a.id || isAnnouncementDismissed(a.id)) return;
+          body.innerHTML = renderAnnouncementHTML(a);
+          setTimeout(function () { overlay.classList.add('open'); }, 600);
+        } catch (e) { /* no announcement */ }
+      }
+
+      function closeAnnouncementModal() {
+        document.getElementById('announcementOverlay').classList.remove('open');
+      }
+
+      /* ================================================================
+         5) INIT — each module isolated so one failure can't kill the rest
+         ================================================================ */
+      try { loadSharedSettings(); } catch (e) { console.warn('Settings error:', e); }
+
+      try {
+        canvas = document.getElementById('particleCanvas');
+        if (canvas && canvas.getContext) {
+          ctx = canvas.getContext('2d');
+          resizeCanvas();
+          window.addEventListener('resize', resizeCanvas);
+          rebuildParticles();
+          animateParticles();
+        }
+      } catch (e) { console.warn('Particles error:', e); }
+
+      try { initMouseGlow(); } catch (e) { console.warn('Glow error:', e); }
+      try { loadChangelog(); } catch (e) { console.warn('Changelog error:', e); }
+      try { loadAnnouncement(); } catch (e) { console.warn('Announcement error:', e); }
+    </script>
+  </body>
+</html>
